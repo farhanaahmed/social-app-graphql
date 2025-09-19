@@ -1,136 +1,91 @@
-# Social App GraphQL
+# Go GraphQL Social App
 
-This is a demo social media backend API built with Go and GraphQL.
-It provides core functionality for user authentication and content management, serving as a learning project to demonstrate the principles of building a robust and efficient API.
+This is a demo social media backend API built with **Go** and **GraphQL**. It provides core functionality for post management, serving as a foundational learning project.
 
-## 🚀 Features
+## 🚀 Features Implemented
 
-* **User Authentication**: Secure user registration and login with password hashing and JWT-based authentication.
-* **Post Management**: Users can create, update, and delete their own text-based posts.
-* **Data Fetching**: Efficient data retrieval using GraphQL queries, allowing clients to request exactly the data they need.
-* **Scalable Architecture**: Built with a clear separation of concerns, making it easy to extend for future features.
+* **GraphQL API**: A single, efficient `/graphql` endpoint for all data operations.
+* **Post Management**: Users can create new posts and fetch all existing posts.
+* **Database Integration**: Data is persisted in a **PostgreSQL** database.
+* **Authentication (Mocked)**: A hardcoded user ID is injected into the request context to simulate a logged-in user and enable post creation.
 
 ## 🛠️ Technologies Used
 
-* **Go**: The main programming language for the backend.
-* **GraphQL**: The query language and server-side runtime for our API.
-* **gqlgen**: A powerful code-generation library for Go that simplifies GraphQL server development.
-* **Chi**: A lightweight, idiomatic router for Go.
-* **PostgreSQL**: A robust and scalable relational database for data persistence.
-* **bcrypt**: A library for secure password hashing.
-* **jwt**: A library for implementing JSON Web Tokens for authentication.
+* **Go**: The main backend language.
+* **GraphQL**: The query language for our API, implemented using `graphql-go/graphql`.
+* **Chi**: A lightweight router for Go.
+* **PostgreSQL**: Our relational database.
 
 ## 📦 Getting Started
 
 ### Prerequisites
 
-You need to have the following installed on your machine:
-
-* **Go**: Version 1.18 or higher.
-* **PostgreSQL**: A running instance of a PostgreSQL database.
+You need to have **Go** (1.18 or higher) and **PostgreSQL** installed.
 
 ### Installation
 
-1.  **Clone the repository:**
+1.  **Clone the repository**:
     ```bash
-    git clone [https://github.com/your-username/social-app.git](https://github.com/your-username/social-app.git)
-    cd social-app
+    git clone [https://github.com/your-username/go-social-app.git](https://github.com/your-username/go-social-app.git)
+    cd go-social-app
     ```
-2.  **Set up the database:**
-    Create a new PostgreSQL database and two tables for `users` and `posts`.
+2.  **Set up the database**:
+    Create a database named `social_app_db` and the `users` and `posts` tables.
     ```sql
     -- Connect to your PostgreSQL instance
     CREATE DATABASE social_app_db;
-
     \c social_app_db;
-
-    CREATE TABLE users (
-        id SERIAL PRIMARY KEY,
-        username VARCHAR(50) UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL
-    );
-
-    CREATE TABLE posts (
-        id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL REFERENCES users(id),
-        content TEXT NOT NULL,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-    );
+    CREATE TABLE users (id SERIAL PRIMARY KEY, username VARCHAR(50) UNIQUE NOT NULL, password_hash TEXT NOT NULL);
+    CREATE TABLE posts (id SERIAL PRIMARY KEY, user_id INT NOT NULL REFERENCES users(id), content TEXT NOT NULL, created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);
+    -- Insert a dummy user to enable post creation
+    INSERT INTO users (id, username, password_hash) VALUES (1, 'testuser', 'dummypass');
     ```
-3.  **Configure the database connection:**
-    Update the connection string in your `main.go` file with your database credentials.
-
-4.  **Install dependencies:**
+3.  **Install dependencies**:
     ```bash
     go mod tidy
     ```
-5.  **Run the GraphQL server:**
+4.  **Run the server**:
     ```bash
     go run main.go
     ```
     The server will start on `http://localhost:8080`.
 
-## 🕹️ Usage
+## 🕹️ API Usage
 
-You can interact with the API using the GraphQL Playground, accessible at `http://localhost:8080/` in your web browser.
+All requests should be **POST** requests sent to `http://localhost:8080/graphql`.
 
 ### Example Queries and Mutations
 
-#### User Registration (Mutation)
+#### Create a Post (Mutation)
 
-```graphql
-mutation RegisterUser {
-  register(username: "testuser", password: "password123") {
-    token
-  }
+```json
+{
+  "query": "mutation { createPost(content: \"This is my first post via GraphQL!\") { id content user { username } } }"
 }
 ```
-#### User Login (Mutation)
 
-```graphql
-mutation LoginUser {
-  login(username: "testuser", password: "password123") {
-    token
-  }
-}
-```
-#### Create a Post (Mutation - requires a JWT in the Authorization header)
-
-```graphql
-mutation CreatePost {
-  createPost(content: "This is my first post on this app!") {
-    id
-    content
-    user {
-      username
-    }
-  }
-}
-```
 #### Fetch All Posts (Query)
-```graphql
-query AllPosts {
-  posts {
-    id
-    content
-    user {
-      username
-    }
-  }
+
+```json
+{
+  "query": "mutation { createPost(content: \"This is my first post via GraphQL!\") { id content user { username } } }"
 }
 ```
+
 ## 📝 Learning Points
 
-- GraphQL Schema Definition: Understanding how to define types, queries, and mutations, which form the "contract" between the client and server.
+- Go's Concurrency: Go's lightweight threads, goroutines, make the API efficient and fast at handling many user requests simultaneously. This is crucial for a social app.
 
-- Resolvers: Implementing the backend logic that fetches and manipulates data. This is where you'll use Go to connect to the database and fulfill the requests defined in the schema.
+- GraphQL Schema Definition in Go: Defining types, queries, and mutations directly in Go code.
 
-- Code Generation: Leveraging tools like gqlgen to automate boilerplate code. Go's strong typing makes this process especially seamless and reliable.
+- Resolvers: Implementing the backend logic that connects a GraphQL operation to the database.
 
-- Concurrency with Goroutines: Go's native support for lightweight threads (goroutines) allows the API to handle many concurrent user requests efficiently, a critical feature for a social media app.
+- Database Interactions: Connecting to and performing SQL queries on a PostgreSQL database.
 
-- Go's Performance: Go is a compiled language that translates directly to machine code, providing excellent speed and low latency, which is essential for a fast and responsive API.
+## 🛣️ Future Work
 
-- Authentication Flow: Implementing secure JWT-based authentication in a GraphQL context. You'll learn how to validate tokens and secure specific API operations (mutations) that require a logged-in user.
+- User Authentication: Implement a secure user login system.
 
-- Database Interactions: Connecting to and performing CRUD (Create, Read, Update, Delete) operations on a PostgreSQL database using Go's database/sql package and external drivers
+- CRUD Operations: Add updatePost and deletePost mutations.
+
+- Social Features: Implement logic for users to follow each other.
