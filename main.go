@@ -14,10 +14,10 @@ import (
 
 var db *sql.DB
 
-// Our GraphQL schema (we'll define this later)
+// Our GraphQL schema
 var socialAppSchema, _ = graphql.NewSchema(graphql.SchemaConfig{
-	Query:    nil,
-	Mutation: nil,
+	Query:    rootQuery,
+	Mutation: rootMutation,
 })
 
 const defaultPort = "8080"
@@ -56,7 +56,9 @@ func main() {
 			RequestString:  params.Query,
 			VariableValues: params.Variables,
 			OperationName:  params.OperationName,
-			Context:        context.WithValue(req.Context(), "db", db), // Pass the DB connection via context
+			//Context:      context.WithValue(req.Context(), "db", db), // Pass the DB connection via context
+			// Simulating logged-in user with ID 1
+			Context: context.WithValue(context.WithValue(req.Context(), "db", db), "userID", 1),
 		})
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(result); err != nil {
