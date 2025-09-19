@@ -2,61 +2,74 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/graphql-go/graphql"
+	_ "github.com/lib/pq" // PostgreSQL driver
 )
 
-// GraphQL schema
+var db *sql.DB
+
+// Our GraphQL schema (we'll define this later)
 var socialAppSchema, _ = graphql.NewSchema(graphql.SchemaConfig{
 	Query:    nil,
 	Mutation: nil,
 })
 
+const defaultPort = "8080"
+
 func main() {
-	// Create a new router
+	// Database connection setup
+	var err error
+	connStr := "user=go_user password=gopass dbname=social_app_db sslmode=disable"
+	db, err = sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatalf("Unable to connect to database: %v", err)
+	}
+	defer db.Close() // Ensure the connection is closed
+
+	if err = db.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
+
+	log.Println("Successfully connected to the database!")
+
+	// Router and GraphQL server setup
 	r := chi.NewRouter()
 
-	// Define the GraphQL endpoint
 	r.Post("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var params struct {
 			Query         string                 `json:"query"`
 			OperationName string                 `json:"operationName"`
 			Variables     map[string]interface{} `json:"variables"`
 		}
-
 		if err := json.NewDecoder(req.Body).Decode(&params); err != nil {
 			http.Error(w, "Invalid request body", http.StatusBadRequest)
 			return
 		}
-
-		// Execute the GraphQL query
 		result := graphql.Do(graphql.Params{
 			Schema:         socialAppSchema,
 			RequestString:  params.Query,
 			VariableValues: params.Variables,
 			OperationName:  params.OperationName,
-			Context:        context.Background(),
+			Context:        context.WithValue(req.Context(), "db", db), // Pass the DB connection via context
 		})
-
-		// Return the result as a JSON response
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(result); err != nil {
 			http.Error(w, "Failed to write response", http.StatusInternalServerError)
 		}
 	})
 
-	// This is a GET endpoint to help you test with a browser
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("GraphQL server is running at /graphql"))
 	})
 
 	log.Println("Server is running on :8080")
-	err := http.ListenAndServe(":8080", r)
-	if err != nil {
+	if err := http.ListenAndServe(":"+defaultPort, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
 }
