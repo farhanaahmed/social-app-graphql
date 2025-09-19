@@ -53,6 +53,29 @@ var postType = graphql.NewObject(
 			"user": &graphql.Field{
 				Type:        userType,
 				Description: "The user who created the post.",
+				// Add this Resolve function
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					db, ok := p.Context.Value("db").(*sql.DB)
+					if !ok {
+						return nil, fmt.Errorf("database connection not found in context")
+					}
+
+					// The 'Source' field holds the Post object from the parent resolver
+					post, ok := p.Source.(Post)
+					if !ok {
+						return nil, fmt.Errorf("source is not a Post object")
+					}
+
+					var user User
+					err := db.QueryRow("SELECT id, username FROM users WHERE id = $1", post.UserID).
+						Scan(&user.ID, &user.Username)
+
+					if err != nil {
+						return nil, fmt.Errorf("failed to fetch user: %w", err)
+					}
+
+					return user, nil
+				},
 			},
 		},
 	},
