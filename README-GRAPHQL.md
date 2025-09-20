@@ -5,32 +5,27 @@ The schema defines a tree-like structure of data and operations. All API capabil
 
 ## Schema Structure
 
-GraphQL Schema
-|
-├── RootQuery (Read-only operations)
-|   |
-|   ├── Query Field (e.g., "posts")
-|   |   |-- Resolve function (fetches data)
-|   |   |-- Return Type (e.g., `[Post!]`)
-|
-|
-├── RootMutation (Write operations)
-|   |
-|   ├── Mutation Field (e.g., "createPost")
-|   |   |-- Resolve function (modifies data)
-|   |   |-- Return Type (e.g., `Post`)
-|
-|
-└── Object Types (Reusable data structures)
-|
-├── Post Type
-|   |-- id: ID!
-|   |-- content: String!
-|   |-- user: User!
-|
-└── User Type
-|-- id: ID!
-|-- username: String!
+The schema is organized into three main parts:
+
+- GraphQL Schema
+    - RootQuery (Read-only operations)
+        - Query Field (e.g., "posts")
+            - Resolve function (fetches data)
+            - Return Type (e.g., `[Post!]`)
+    - RootMutation (Write operations)
+        - Mutation Field (e.g., "createPost")
+            - Resolve function (modifies data)
+            - Return Type (e.g., `Post`)
+    - Object Types (Reusable data structures)
+        - Post Type
+            - id: ID!
+            - content: String!
+            - user: User!
+        - User Type
+            - id: ID!
+            - username: String!
+
+---
 
 ##  Logic & Components
 
