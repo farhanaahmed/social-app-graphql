@@ -96,6 +96,10 @@ This mutation deletes an existing post by ID.
 }
 ```
 
+## 🧪 Testing
+
+All API functionality, including the CRUD operations for posts, was manually tested using **Postman**. The single GraphQL endpoint (/graphql) was validated by sending various queries and mutations as POST requests.
+
 ## 📝 Learning Points
 
 - CRUD with GraphQL: Implementing all four core database operations (Create, Read, Update, Delete) through a single endpoint.
