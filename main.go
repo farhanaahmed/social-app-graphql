@@ -70,7 +70,7 @@ func main() {
 		w.Write([]byte("GraphQL server is running at /graphql"))
 	})
 
-	log.Println("Server is running on :8080")
+	log.Println("Server is running on", defaultPort)
 	if err := http.ListenAndServe(":"+defaultPort, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

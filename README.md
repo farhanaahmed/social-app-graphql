@@ -68,7 +68,21 @@ All requests should be **POST** requests sent to `http://localhost:8080/graphql`
 
 ```json
 {
-  "query": "mutation { createPost(content: \"This is my first post via GraphQL!\") { id content user { username } } }"
+  "query": "query { posts { id content user { username } } }"
+}
+```
+#### Update a Post (Query)
+
+```json
+{
+  "query": "mutation { updatePost(id: 1 (change to post-id), content: \"My post has been updated!\") { id content user { username } } }"
+}
+```
+#### Delete a Post (Query)
+
+```json
+{
+  "query": "mutation { deletePost(id: 1 (change to post-id))}"
 }
 ```
 

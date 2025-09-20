@@ -86,57 +86,31 @@ var rootQuery = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootQuery",
 	Fields: graphql.Fields{
 		"posts": &graphql.Field{
-			Type:        graphql.NewList(postType), // This query returns a list of Post objects
+			Type:        graphql.NewList(postType),
 			Description: "Get a list of all posts",
-			//Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-			//	// Get the database connection from the request's context
-			//	db := p.Context.Value("db").(*sql.DB)
-			//
-			//	// Run a SQL query to get all posts from the table
-			//	rows, err := db.Query("SELECT id, user_id, content FROM posts")
-			//	if err != nil {
-			//		// If there's a problem with the query, we'll return an error
-			//		return nil, err
-			//	}
-			//	defer rows.Close()
-			//
-			//	var posts []Post
-			//	for rows.Next() {
-			//		var post Post
-			//		// Copy the data from the database row into our Go struct
-			//		if err := rows.Scan(&post.ID, &post.UserID, &post.Content); err != nil {
-			//			return nil, err
-			//		}
-			//		posts = append(posts, post)
-			//	}
-			//	// Return our list of posts
-			//	return posts, nil
-			//},
 			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				// This is the correct logic for a query
 				db, ok := p.Context.Value("db").(*sql.DB)
 				if !ok {
 					return nil, fmt.Errorf("database connection not found in context")
 				}
 
-				// Retrieve the simulated user ID from the context
-				userID, ok := p.Context.Value("userID").(int)
-				if !ok {
-					return nil, fmt.Errorf("user not authenticated")
-				}
-
-				content, _ := p.Args["content"].(string)
-
-				var newPost Post
-				err := db.QueryRow(
-					"INSERT INTO posts (user_id, content) VALUES ($1, $2) RETURNING id, user_id, content",
-					userID, content,
-				).Scan(&newPost.ID, &newPost.UserID, &newPost.Content)
-
+				rows, err := db.Query("SELECT id, user_id, content FROM posts")
 				if err != nil {
-					return nil, fmt.Errorf("failed to create post: %w", err)
+					// It's crucial to return a valid slice even if the query fails
+					return nil, err
 				}
+				defer rows.Close()
 
-				return newPost, nil
+				var posts []Post
+				for rows.Next() {
+					var post Post
+					if err := rows.Scan(&post.ID, &post.UserID, &post.Content); err != nil {
+						return nil, err
+					}
+					posts = append(posts, post)
+				}
+				return posts, nil
 			},
 		},
 	},
@@ -177,6 +151,88 @@ var rootMutation = graphql.NewObject(graphql.ObjectConfig{
 				}
 
 				return newPost, nil
+			},
+		},
+		"updatePost": &graphql.Field{
+			Type:        postType,
+			Description: "Updates an existing post",
+			Args: graphql.FieldConfigArgument{
+				"id": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.Int),
+				},
+				"content": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.String),
+				},
+			},
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				db, ok := p.Context.Value("db").(*sql.DB)
+				if !ok {
+					return nil, fmt.Errorf("database connection not found in context")
+				}
+				userID, ok := p.Context.Value("userID").(int)
+				if !ok {
+					return nil, fmt.Errorf("user not authenticated")
+				}
+				postID, _ := p.Args["id"].(int)
+				content, _ := p.Args["content"].(string)
+
+				// **Authorization Check:** Find the post's owner ID
+				var ownerID int
+				err := db.QueryRow("SELECT user_id FROM posts WHERE id = $1", postID).Scan(&ownerID)
+				if err != nil {
+					return nil, fmt.Errorf("post not found or failed to check ownership: %w", err)
+				}
+				if ownerID != userID {
+					return nil, fmt.Errorf("unauthorized: you can only update your own posts")
+				}
+				// Execute the update
+				var updatedPost Post
+				err = db.QueryRow(
+					"UPDATE posts SET content = $1 WHERE id = $2 RETURNING id, user_id, content",
+					content, postID,
+				).Scan(&updatedPost.ID, &updatedPost.UserID, &updatedPost.Content)
+				if err != nil {
+					return nil, fmt.Errorf("failed to update post: %w", err)
+				}
+				return updatedPost, nil
+
+				return nil, nil
+			},
+		},
+		"deletePost": &graphql.Field{
+			Type:        graphql.Boolean, // Returns true/false for success
+			Description: "Deletes an existing post",
+			Args: graphql.FieldConfigArgument{
+				"id": &graphql.ArgumentConfig{
+					Type: graphql.NewNonNull(graphql.Int),
+				},
+			},
+			Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+				db, ok := p.Context.Value("db").(*sql.DB)
+				if !ok {
+					return nil, fmt.Errorf("database connection not found in context")
+				}
+				userID, ok := p.Context.Value("userID").(int)
+				if !ok {
+					return nil, fmt.Errorf("user not authenticated")
+				}
+				postID, _ := p.Args["id"].(int)
+				// **Authorization Check:** Find the post's owner ID
+				var ownerID int
+				err := db.QueryRow("SELECT user_id FROM posts WHERE id = $1", postID).Scan(&ownerID)
+				if err != nil {
+					return nil, fmt.Errorf("post not found or failed to check ownership: %w", err)
+				}
+				if ownerID != userID {
+					return nil, fmt.Errorf("unauthorized: you can only delete your own posts")
+				}
+				// Execute the delete
+				res, err := db.Exec("DELETE FROM posts WHERE id = $1", postID)
+				if err != nil {
+					return nil, fmt.Errorf("failed to delete post: %w", err)
+				}
+				rowsAffected, _ := res.RowsAffected()
+				return rowsAffected > 0, nil
 			},
 		},
 	},
