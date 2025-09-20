@@ -1,13 +1,15 @@
 # Go GraphQL Social App
 
-This is a demo social media backend API built with **Go** and **GraphQL**. It provides core functionality for post management, serving as a foundational learning project.
+This is a demo social media backend API built with **Go** and **GraphQL**. <br>
+It provides a complete set of CRUD (Create, Read, Update, Delete) operations for managing posts, serving as a foundational learning project.
 
 ## 🚀 Features Implemented
 
 * **GraphQL API**: A single, efficient `/graphql` endpoint for all data operations.
+* **Full CRUD**: Complete functionality to create, read, update, and delete posts.
 * **Post Management**: Users can create new posts and fetch all existing posts.
 * **Database Integration**: Data is persisted in a **PostgreSQL** database.
-* **Authentication (Mocked)**: A hardcoded user ID is injected into the request context to simulate a logged-in user and enable post creation.
+* **Authentication (Mocked)**: A hardcoded user ID is injected into the request context to simulate a logged-in user and enable authorization checks for post ownership.
 
 ## 🛠️ Technologies Used
 
@@ -58,6 +60,8 @@ All requests should be **POST** requests sent to `http://localhost:8080/graphql`
 
 #### Create a Post (Mutation)
 
+This mutation creates a new post and associates it with the mock user (ID 1).
+
 ```json
 {
   "query": "mutation { createPost(content: \"This is my first post via GraphQL!\") { id content user { username } } }"
@@ -66,12 +70,16 @@ All requests should be **POST** requests sent to `http://localhost:8080/graphql`
 
 #### Fetch All Posts (Query)
 
+This query retrieves a list of all posts in the database.
+
 ```json
 {
   "query": "query { posts { id content user { username } } }"
 }
 ```
 #### Update a Post (Query)
+
+This mutation updates the content of an existing post by ID.
 
 ```json
 {
@@ -80,6 +88,8 @@ All requests should be **POST** requests sent to `http://localhost:8080/graphql`
 ```
 #### Delete a Post (Query)
 
+This mutation deletes an existing post by ID.
+
 ```json
 {
   "query": "mutation { deletePost(id: 1 (change to post-id))}"
@@ -87,6 +97,8 @@ All requests should be **POST** requests sent to `http://localhost:8080/graphql`
 ```
 
 ## 📝 Learning Points
+
+- CRUD with GraphQL: Implementing all four core database operations (Create, Read, Update, Delete) through a single endpoint.
 
 - Go's Concurrency: Go's lightweight threads, goroutines, make the API efficient and fast at handling many user requests simultaneously. This is crucial for a social app.
 
@@ -100,6 +112,6 @@ All requests should be **POST** requests sent to `http://localhost:8080/graphql`
 
 - User Authentication: Implement a secure user login system.
 
-- CRUD Operations: Add updatePost and deletePost mutations.
-
 - Social Features: Implement logic for users to follow each other.
+
+- Testing: Write unit and integration tests to ensure the API is reliable.
